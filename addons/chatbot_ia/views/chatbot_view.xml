@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+<data>
+    <record id="view_chatbot_form" model="ir.ui.view">
+        <field name="name">chatbot.ia.form</field>
+        <field name="model">chatbot.ia</field>
+        <field name="arch" type="xml">
+            <form string="Chatbot">
+                <sheet>
+                    <group>
+                        <field name="pregunta"/>
+                        <button name="accion_consultar" string="Consultar" type="object" class="oe_highlight"/>
+                    </group>
+                    <group>
+                        <field name="respuesta"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_chatbot_ia" model="ir.actions.act_window">
+        <field name="name">Chatbot IA</field>
+        <field name="res_model">chatbot.ia</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <menuitem id="menu_chatbot_root" name="Chatbot IA" sequence="10"
+        web_icon="chatbot_ia,static/description/icon.png"/>
+    <menuitem id="menu_chatbot_main" name="Chat" parent="menu_chatbot_root" action="action_chatbot_ia"/>
+</data>
+</odoo>
