@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+<data>
+
+    <!-- ============= FORM VIEW: Chat ============= -->
+    <record id="view_chatbot2_form" model="ir.ui.view">
+        <field name="name">chatbot.ia2.form</field>
+        <field name="model">chatbot.ia2</field>
+        <field name="arch" type="xml">
+            <form string="Chat IA v2">
+                <header>
+                    <button name="accion_nueva_sesion" string="Nueva Sesion"
+                            type="object" class="btn btn-secondary"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+
+                    <!-- Area de chat con burbujas HTML -->
+                    <div class="o_chatbot_chat_area">
+                        <field name="chat_html" nolabel="1" readonly="1"/>
+                    </div>
+
+                    <!-- One2many oculto (necesario para que Odoo cargue los mensajes) -->
+                    <field name="message_ids" invisible="1"/>
+
+                    <!-- Area de input -->
+                    <div class="o_chatbot_input_area">
+                        <field name="input_text" placeholder="Escribi tu consulta..."
+                               nolabel="1"/>
+                        <button name="accion_enviar" string="Enviar"
+                                type="object" class="btn btn-primary"/>
+                    </div>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- ============= TREE VIEW ============= -->
+    <record id="view_chatbot2_tree" model="ir.ui.view">
+        <field name="name">chatbot.ia2.tree</field>
+        <field name="model">chatbot.ia2</field>
+        <field name="arch" type="xml">
+            <tree string="Sesiones de Chat">
+                <field name="name"/>
+                <field name="create_date"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- ============= ACTION ============= -->
+    <record id="action_chatbot_ia2" model="ir.actions.act_window">
+        <field name="name">Chatbot IA v2</field>
+        <field name="res_model">chatbot.ia2</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <!-- ============= MENU ============= -->
+    <menuitem id="menu_chatbot2_root" name="Chatbot IA v2" sequence="11"
+        web_icon="chatbot_ia_2,static/description/icon.png"/>
+    <menuitem id="menu_chatbot2_main" name="Chat"
+        parent="menu_chatbot2_root" action="action_chatbot_ia2"/>
+
+</data>
+</odoo>
