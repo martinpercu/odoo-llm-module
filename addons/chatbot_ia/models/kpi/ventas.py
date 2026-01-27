@@ -1,5 +1,5 @@
 from odoo import models
-from datetime import datetime, timedelta
+from .helpers import month_range, prev_month_range, variacion_porcentual
 
 
 class KPIVentas(models.AbstractModel):
@@ -7,42 +7,70 @@ class KPIVentas(models.AbstractModel):
     _description = 'KPIs de Ventas para Chatbot'
 
     def get_ventas_mes_actual(self):
-        """Total de ventas del mes actual"""
-        hoy = datetime.now()
-        primer_dia = hoy.replace(day=1, hour=0, minute=0, second=0)
+        """KPI 1: Total ventas del mes actual + variación vs mes anterior"""
+        start_m, end_m = month_range(self)
+        start_pm, end_pm = prev_month_range(self)
 
-        ventas = self.env['sale.order'].search([
+        ventas_actual = self.env['sale.order'].search([
             ('state', 'in', ['sale', 'done']),
-            ('date_order', '>=', primer_dia),
+            ('date_order', '>=', start_m),
+            ('date_order', '<', end_m),
         ])
-        total = sum(ventas.mapped('amount_total'))
-        cantidad = len(ventas)
+        total_actual = sum(ventas_actual.mapped('amount_total'))
+        cantidad_actual = len(ventas_actual)
+
+        ventas_anterior = self.env['sale.order'].search([
+            ('state', 'in', ['sale', 'done']),
+            ('date_order', '>=', start_pm),
+            ('date_order', '<', end_pm),
+        ])
+        total_anterior = sum(ventas_anterior.mapped('amount_total'))
+        cantidad_anterior = len(ventas_anterior)
+
+        variacion = variacion_porcentual(total_actual, total_anterior)
 
         return {
-            'total': total,
-            'cantidad': cantidad,
-            'mensaje': f"Este mes llevas ${total:,.2f} en ventas ({cantidad} pedidos confirmados)"
+            'total_actual': total_actual,
+            'cantidad_actual': cantidad_actual,
+            'total_anterior': total_anterior,
+            'cantidad_anterior': cantidad_anterior,
+            'variacion_porcentual': variacion,
+            'mensaje': (
+                f"Ventas del mes actual: ${total_actual:,.2f} ({cantidad_actual} pedidos). "
+                f"Mes anterior: ${total_anterior:,.2f} ({cantidad_anterior} pedidos). "
+                f"Variación: {variacion:+.1f}%"
+            )
         }
 
-    def get_ventas_mes_anterior(self):
-        """Total de ventas del mes anterior"""
-        hoy = datetime.now()
-        primer_dia_mes_actual = hoy.replace(day=1)
-        ultimo_dia_mes_anterior = primer_dia_mes_actual - timedelta(days=1)
-        primer_dia_mes_anterior = ultimo_dia_mes_anterior.replace(day=1, hour=0, minute=0, second=0)
+    def get_top_productos(self, limite=5):
+        """KPI 2: Top productos por ingreso del mes (usa sale.report)"""
+        start_m, end_m = month_range(self)
 
-        ventas = self.env['sale.order'].search([
-            ('state', 'in', ['sale', 'done']),
-            ('date_order', '>=', primer_dia_mes_anterior),
-            ('date_order', '<=', ultimo_dia_mes_anterior),
-        ])
-        total = sum(ventas.mapped('amount_total'))
-        cantidad = len(ventas)
+        data = self.env['sale.report'].read_group(
+            domain=[
+                ('state', 'in', ['sale', 'done']),
+                ('date', '>=', start_m),
+                ('date', '<', end_m),
+                ('product_id', '!=', False),
+            ],
+            fields=['product_id', 'price_total'],
+            groupby=['product_id'],
+            orderby='price_total desc',
+            limit=limite,
+        )
+
+        if not data:
+            return {'mensaje': "No hay ventas este mes para mostrar top productos"}
+
+        lineas = []
+        for i, item in enumerate(data):
+            nombre = item['product_id'][1]
+            monto = float(item['price_total'])
+            lineas.append(f"{i+1}. {nombre}: ${monto:,.2f}")
 
         return {
-            'total': total,
-            'cantidad': cantidad,
-            'mensaje': f"El mes pasado vendiste ${total:,.2f} ({cantidad} pedidos)"
+            'top': [{'producto': d['product_id'][1], 'monto': float(d['price_total'])} for d in data],
+            'mensaje': "Top productos del mes por ingreso:\n" + "\n".join(lineas)
         }
 
     def get_pedidos_pendientes(self):
@@ -60,13 +88,13 @@ class KPIVentas(models.AbstractModel):
         }
 
     def get_top_clientes(self, limite=5):
-        """Top clientes por monto de ventas"""
-        hoy = datetime.now()
-        primer_dia = hoy.replace(day=1, hour=0, minute=0, second=0)
+        """Top clientes por monto de ventas del mes"""
+        start_m, end_m = month_range(self)
 
         ventas = self.env['sale.order'].search([
             ('state', 'in', ['sale', 'done']),
-            ('date_order', '>=', primer_dia),
+            ('date_order', '>=', start_m),
+            ('date_order', '<', end_m),
         ])
 
         clientes = {}
@@ -81,18 +109,18 @@ class KPIVentas(models.AbstractModel):
 
         lineas = [f"{i+1}. {nombre}: ${monto:,.2f}" for i, (nombre, monto) in enumerate(top)]
         return {
-            'top': top,
+            'top': [{'cliente': n, 'monto': m} for n, m in top],
             'mensaje': "Top clientes del mes:\n" + "\n".join(lineas)
         }
 
     def get_ticket_promedio(self):
         """Ticket promedio de ventas del mes"""
-        hoy = datetime.now()
-        primer_dia = hoy.replace(day=1, hour=0, minute=0, second=0)
+        start_m, end_m = month_range(self)
 
         ventas = self.env['sale.order'].search([
             ('state', 'in', ['sale', 'done']),
-            ('date_order', '>=', primer_dia),
+            ('date_order', '>=', start_m),
+            ('date_order', '<', end_m),
         ])
 
         if not ventas:

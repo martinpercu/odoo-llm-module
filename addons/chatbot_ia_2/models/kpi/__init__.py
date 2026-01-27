@@ -1,3 +1,4 @@
 from . import ventas
-from . import compras
 from . import facturacion
+from . import productos
+from . import contador
