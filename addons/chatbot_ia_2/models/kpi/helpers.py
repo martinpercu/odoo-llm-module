@@ -1,6 +1,9 @@
 from odoo import fields
 from dateutil.relativedelta import relativedelta
 
+# Umbral maximo de registros antes de pedir al usuario que acote la consulta
+UMBRAL_REGISTROS = 50
+
 
 def month_range(record):
     """Retorna (primer_dia_mes_actual, primer_dia_mes_siguiente)"""

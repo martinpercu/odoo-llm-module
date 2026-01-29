@@ -31,3 +31,4 @@ services:
       - ./odoo-web-data:/var/lib/odoo
       - ./addons:/mnt/extra-addons
       - ./config:/etc/odoo
+    command: ["odoo", "-c", "/etc/odoo/odoo.conf", "-u", "chatbot_ia_2", "--dev=all"]

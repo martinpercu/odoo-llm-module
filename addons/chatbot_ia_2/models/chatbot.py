@@ -31,53 +31,6 @@ class OdooJSONEncoder(json.JSONEncoder):
 
 FUNCIONES_DISPONIBLES = [
     {
-        "name": "contar_registros",
-        "description": (
-            "Cuenta la cantidad de registros que cumplen ciertos filtros "
-            "ANTES de consultarlos. Usar siempre antes de get_productos, "
-            "get_ventas o get_facturas cuando no se sabe cuantos registros hay, "
-            "para decidir si aplicar filtros adicionales o pedir al usuario "
-            "que acote la consulta. Modelos disponibles: 'producto', 'venta', 'factura'."
-        ),
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "modelo": {
-                    "type": "string",
-                    "enum": ["producto", "venta", "factura"],
-                    "description": "Tipo de registro a contar",
-                },
-                "filtros": {
-                    "type": "object",
-                    "description": (
-                        "Filtros opcionales segun el modelo. "
-                        "Para producto: {nombre, precio_min, precio_max}. "
-                        "Para venta: {producto_ids, vendedor_ids, cliente_ids, periodo, estado}. "
-                        "Para factura: {estado, cliente_ids, dias_vencimiento}."
-                    ),
-                    "properties": {
-                        "nombre": {"type": "string"},
-                        "precio_min": {"type": "number"},
-                        "precio_max": {"type": "number"},
-                        "producto_ids": {"type": "array", "items": {"type": "integer"}},
-                        "vendedor_ids": {"type": "array", "items": {"type": "integer"}},
-                        "cliente_ids": {"type": "array", "items": {"type": "integer"}},
-                        "periodo": {
-                            "type": "string",
-                            "enum": ["mes_actual", "mes_anterior", "trimestre", "anio"],
-                        },
-                        "estado": {
-                            "type": "string",
-                            "enum": ["borrador", "confirmado", "pagado", "vencido", "pendiente", "todos"],
-                        },
-                        "dias_vencimiento": {"type": "integer"},
-                    },
-                },
-            },
-            "required": ["modelo"],
-        },
-    },
-    {
         "name": "get_productos",
         "description": (
             "Obtiene lista de productos con id, nombre, precio y stock. "
@@ -216,8 +169,9 @@ REGLAS CRITICAS:
 1. SIEMPRE usa funciones para obtener datos. NUNCA inventes datos.
 2. Para consultas complejas, ENCADENA funciones: usa el resultado de una como entrada de la siguiente.
    Ejemplo: primero get_productos para obtener IDs, luego get_ventas con esos producto_ids.
-3. ANTES de consultar datos que podrian ser muchos registros, usa contar_registros para verificar el volumen.
-   Si hay mas de 50 registros, pedi al usuario que acote la consulta con filtros.
+3. Las funciones tienen proteccion automatica: si hay demasiados registros, devuelven una advertencia
+   con la cantidad y te piden que solicites al usuario filtros adicionales.
+   Cuando recibas una advertencia, transmitila al usuario de forma amigable y sugerile opciones para acotar.
 4. Responde en espanol, conciso y directo.
 5. Usa valores por defecto si el usuario no especifica.
 6. Si la pregunta no se relaciona con ninguna funcion, indica que consultas podes hacer.
@@ -229,8 +183,8 @@ Funciones disponibles cubren:
 - Facturacion: cuentas por cobrar/pagar, vencimientos, estados
 
 FLUJO RECOMENDADO para consultas complejas:
-1. contar_registros -> verificar volumen
-2. get_productos/get_ventas/get_facturas -> obtener datos con IDs
+1. Llamar a la funcion directamente (el sistema verifica volumen automaticamente)
+2. Si recibes advertencia de volumen, pedir al usuario que acote la consulta
 3. Encadenar si necesitas cruzar datos (ej: productos -> ventas de esos productos)
 """
 
@@ -435,12 +389,7 @@ class OdooChatbot2(models.Model):
     def _ejecutar_funcion(self, nombre, argumentos):
         """Rutea las llamadas de funciones a los handlers KPI correspondientes."""
         try:
-            if nombre == 'contar_registros':
-                return self.env['chatbot2.kpi.contador'].contar_registros(
-                    argumentos.get('modelo'),
-                    argumentos.get('filtros', {}),
-                )
-            elif nombre == 'get_productos':
+            if nombre == 'get_productos':
                 return self.env['chatbot2.kpi.productos'].get_productos(
                     orden=argumentos.get('orden', 'nombre_asc'),
                     limite=argumentos.get('limite', 10),

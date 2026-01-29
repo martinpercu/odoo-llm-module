@@ -270,3 +270,23 @@ odoo-web-data/
 postgres/
 addons/oca/
 
+
+
+
+# Extras para agregar a la DB grande
+2026_01_27_05_00_09.dump.zip
+README.txt
+addons/centic/
+addons/centic_main/
+addons/cybrosys/
+addons/itprojects/
+addons/kripal/
+addons/leantic/
+addons/leantic_stg/
+addons/odoomates/
+addons/odooqs/
+addons/others/
+addons/sale_order_automation/
+addons/staging/
+addons/terrabit/
+vendor.tar.gz

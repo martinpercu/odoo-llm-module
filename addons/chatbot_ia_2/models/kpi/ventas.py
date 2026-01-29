@@ -1,5 +1,5 @@
 from odoo import models
-from .helpers import date_range_from_periodo
+from .helpers import date_range_from_periodo, UMBRAL_REGISTROS
 
 
 AGRUPAR_MAP = {
@@ -13,17 +13,8 @@ class KPIVentas2(models.AbstractModel):
     _name = 'chatbot2.kpi.ventas'
     _description = 'KPI Ventas para Chatbot v2'
 
-    def get_ventas(self, producto_ids=None, vendedor_ids=None, cliente_ids=None,
-                   agrupar_por=None, periodo='mes_actual', limite=20, orden='monto_desc'):
-        start, end = date_range_from_periodo(self, periodo)
-
-        if agrupar_por and agrupar_por in AGRUPAR_MAP:
-            return self._get_ventas_agrupadas(
-                agrupar_por, start, end,
-                producto_ids, vendedor_ids, cliente_ids, limite, orden,
-            )
-
-        # Sin agrupacion: pedidos individuales
+    def _build_domain(self, start, end, producto_ids, vendedor_ids, cliente_ids):
+        """Construye el domain para ventas."""
         domain = [
             ('state', 'in', ['sale', 'done']),
             ('date_order', '>=', start),
@@ -35,6 +26,39 @@ class KPIVentas2(models.AbstractModel):
             domain.append(('partner_id', 'in', cliente_ids))
         if producto_ids:
             domain.append(('order_line.product_id', 'in', producto_ids))
+        return domain
+
+    def get_ventas(self, producto_ids=None, vendedor_ids=None, cliente_ids=None,
+                   agrupar_por=None, periodo='mes_actual', limite=20, orden='monto_desc'):
+        start, end = date_range_from_periodo(self, periodo)
+
+        if agrupar_por and agrupar_por in AGRUPAR_MAP:
+            return self._get_ventas_agrupadas(
+                agrupar_por, start, end,
+                producto_ids, vendedor_ids, cliente_ids, limite, orden,
+            )
+
+        # Sin agrupacion: pedidos individuales
+        domain = self._build_domain(start, end, producto_ids, vendedor_ids, cliente_ids)
+
+        # Pre-check de volumen con el mismo domain
+        count = self.env['sale.order'].search_count(domain)
+        if count > UMBRAL_REGISTROS:
+            return {
+                'advertencia': True,
+                'cantidad': count,
+                'periodo': periodo,
+                'filtros_actuales': {
+                    'producto_ids': producto_ids,
+                    'vendedor_ids': vendedor_ids,
+                    'cliente_ids': cliente_ids,
+                },
+                'mensaje': (
+                    f"Hay {count} pedidos en el periodo '{periodo}'. "
+                    f"Pedile al usuario que acote la busqueda por vendedor, "
+                    f"cliente, producto, o cambie el periodo."
+                ),
+            }
 
         order_str = 'amount_total desc'
         if orden == 'monto_asc':

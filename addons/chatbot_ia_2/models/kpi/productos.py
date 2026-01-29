@@ -1,4 +1,5 @@
 from odoo import models
+from .helpers import UMBRAL_REGISTROS
 
 
 ORDEN_MAP = {
@@ -15,10 +16,9 @@ class KPIProductos(models.AbstractModel):
     _name = 'chatbot2.kpi.productos'
     _description = 'KPI Productos para Chatbot v2'
 
-    def get_productos(self, orden='nombre_asc', limite=10, filtros=None):
-        filtros = filtros or {}
+    def _build_domain(self, filtros):
+        """Construye el domain para productos."""
         domain = [('sale_ok', '=', True)]
-
         if filtros.get('nombre'):
             domain.append(('name', 'ilike', filtros['nombre']))
         if filtros.get('precio_min') is not None:
@@ -29,6 +29,25 @@ class KPIProductos(models.AbstractModel):
             domain.append(('categ_id.name', 'ilike', filtros['categoria']))
         if filtros.get('ids'):
             domain.append(('id', 'in', filtros['ids']))
+        return domain
+
+    def get_productos(self, orden='nombre_asc', limite=10, filtros=None):
+        filtros = filtros or {}
+        domain = self._build_domain(filtros)
+
+        # Pre-check de volumen con el mismo domain
+        count = self.env['product.product'].search_count(domain)
+        if count > UMBRAL_REGISTROS:
+            return {
+                'advertencia': True,
+                'cantidad': count,
+                'filtros_actuales': filtros,
+                'mensaje': (
+                    f"Hay {count} productos que coinciden con la consulta. "
+                    f"Pedile al usuario que acote la busqueda por nombre, "
+                    f"categoria, o rango de precios."
+                ),
+            }
 
         order = ORDEN_MAP.get(orden, 'name asc')
         productos = self.env['product.product'].search(domain, limit=limite, order=order)
