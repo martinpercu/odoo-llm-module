@@ -231,6 +231,9 @@ ehthumbs_vista.db
 # Dump file
 *.stackdump
 
+claude.md
+.claudeignore
+
 # Folder config file
 [Dd]esktop.ini
 
@@ -290,3 +293,4 @@ addons/sale_order_automation/
 addons/staging/
 addons/terrabit/
 vendor.tar.gz
+
