@@ -1,0 +1,18 @@
+1.Usar este addons paths para que al restaurar encuentre las dependencias
+*Importante reemplazar la ruta /mnt/extra-addons por el correcto
+addons_path = /mnt/extra-addons/centic_main,/mnt/extra-addons/others,/mnt/extra-addons/oca/brand,/mnt/extra-addons/oca/commission,/mnt/extra-addons/oca/connector,/mnt/extra-addons/oca/currency,/mnt/extra-addons/oca/delivery-carrier,/mnt/extra-addons/oca/partner-contact,/mnt/extra-addons/oca/product-attribute,/mnt/extra-addons/oca/sale-workflow,/mnt/extra-addons/oca/server-auth,/mnt/extra-addons/oca/server-backend,/mnt/extra-addons/oca/server-brand,/mnt/extra-addons/oca/server-env,/mnt/extra-addons/oca/server-tools,/mnt/extra-addons/oca/server-ux,/mnt/extra-addons/oca/web,/mnt/extra-addons/oca/website,/mnt/extra-addons/cybrosys,/mnt/extra-addons/oca/account-financial-tools,/mnt/extra-addons/oca/stock-logistics-workflow,/mnt/extra-addons/craftsync,/mnt/extra-addons/oca/account-payment,/mnt/extra-addons/oca/account-reconcile,/mnt/extra-addons/oca/payroll,/mnt/extra-addons/oca/reporting-engine,/mnt/extra-addons/oca/mis-builder,/mnt/extra-addons/oca/account-invoicing,/mnt/extra-addons/oca/account-financial-reporting,/mnt/extra-addons/oca/geospatial
+
+2. Para restaurar la base de datos entrar a http://localhost:{PUERTO}/web/database/manager
+*Reemplazar por el puerto correcto
+2.1 Luego click en Restore database
+2.2 Poner el master password de tu instancia
+2.3 Selecccionar el archivo 2026_01_27_05_00_09.dump.zip 
+2.4 Dejar seleccionada la opción This database is a copy
+2.5 Continue
+*Importante si es que no restaura desde esa ventana avisa y hacemos por comandos
+
+3. Usuario admin para entrar al sistema 
+user = admin
+pass = uXFjHB42yXfFfkk
+
+4. En vendor.tar.gz estan todas las dependencias de esa instancia
