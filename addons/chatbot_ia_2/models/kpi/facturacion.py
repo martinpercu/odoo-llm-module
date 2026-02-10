@@ -1,16 +1,15 @@
 from odoo import models
 from dateutil.relativedelta import relativedelta
-from .helpers import today
+from .helpers import today, UMBRAL_REGISTROS
 
 
 class KPIFacturacion2(models.AbstractModel):
     _name = 'chatbot2.kpi.facturacion'
     _description = 'KPI Facturacion para Chatbot v2'
 
-    def get_facturas(self, tipo='cliente', estado='pendiente',
-                     dias_vencimiento=None, cliente_ids=None, limite=20):
+    def _build_domain(self, tipo, estado, dias_vencimiento, cliente_ids):
+        """Construye el domain para facturas."""
         hoy = today(self)
-
         move_type = 'out_invoice' if tipo == 'cliente' else 'in_invoice'
         domain = [
             ('move_type', '=', move_type),
@@ -36,6 +35,32 @@ class KPIFacturacion2(models.AbstractModel):
 
         if cliente_ids:
             domain.append(('partner_id', 'in', cliente_ids))
+
+        return domain
+
+    def get_facturas(self, tipo='cliente', estado='pendiente',
+                     dias_vencimiento=None, cliente_ids=None, limite=20):
+        domain = self._build_domain(tipo, estado, dias_vencimiento, cliente_ids)
+
+        # Pre-check de volumen con el mismo domain
+        count = self.env['account.move'].search_count(domain)
+        if count > UMBRAL_REGISTROS:
+            tipo_label = 'cliente' if tipo == 'cliente' else 'proveedor'
+            return {
+                'advertencia': True,
+                'cantidad': count,
+                'filtros_actuales': {
+                    'tipo': tipo,
+                    'estado': estado,
+                    'dias_vencimiento': dias_vencimiento,
+                    'cliente_ids': cliente_ids,
+                },
+                'mensaje': (
+                    f"Hay {count} facturas de {tipo_label} con estado '{estado}'. "
+                    f"Pedile al usuario que acote la busqueda por estado "
+                    f"(pendiente, vencido, pagado), cliente, o dias de vencimiento."
+                ),
+            }
 
         facturas = self.env['account.move'].search(
             domain, limit=limite, order='invoice_date_due asc'
